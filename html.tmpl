@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="{{.Generator}}">
+<title>{{.Title}}</title>
+<style>
+:root {
+  --surface: #fcfcfb;
+  --plane: #f9f9f7;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --muted: #898781;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #1a1a19;
+    --plane: #0d0d0d;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --muted: #898781;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    color-scheme: dark;
+  }
+}
+/* One class per series. Marks pick the hue up through currentColor, so a
+   theme change needs no JavaScript. */
+{{.SeriesCSS}}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 2rem 1.25rem 3rem;
+  background: var(--plane);
+  color: var(--ink);
+  font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+main { max-width: 60rem; margin: 0 auto; }
+h1 { margin: 0 0 .25rem; font-size: 1.25rem; font-weight: 600; letter-spacing: -.01em; }
+.meta { margin: 0 0 1.5rem; color: var(--muted); font-size: .8125rem; }
+.hero { display: flex; align-items: baseline; gap: .625rem; margin-bottom: .5rem; }
+.hero .value { font-size: 2.5rem; font-weight: 600; line-height: 1; letter-spacing: -.02em; }
+.hero .unit { color: var(--ink-2); font-size: .8125rem; }
+.hero .delta { color: var(--ink-2); font-size: .8125rem; }
+.hero .delta .n { font-weight: 600; color: var(--ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-bottom: .75rem; }
+.legend .item { display: flex; align-items: baseline; gap: .4375rem; font-size: .8125rem; }
+.legend .name { color: var(--ink-2); }
+.legend .n { font-size: 1.125rem; font-weight: 600; color: var(--ink); }
+.legend .d { color: var(--muted); }
+.key { display: inline-block; width: .875rem; height: 2px; border-radius: 1px; background: currentColor; }
+figure {
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--grid);
+  border-radius: 8px;
+  padding: .5rem .25rem .25rem;
+}
+#plot { position: relative; width: 100%; height: 20rem; touch-action: pan-y; }
+#plot:focus-visible { outline: 2px solid var(--axis); outline-offset: 2px; border-radius: 4px; }
+#plot svg { display: block; width: 100%; height: 100%; }
+#plot .noscript { padding: 3rem 1rem; text-align: center; color: var(--muted); }
+.tip {
+  position: absolute;
+  z-index: 2;
+  min-width: 9rem;
+  max-width: 18rem;
+  padding: .5rem .625rem;
+  background: var(--surface);
+  border: 1px solid var(--axis);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+  pointer-events: none;
+  font-size: .8125rem;
+}
+.tip[hidden] { display: none; }
+.tip .when { color: var(--ink-2); margin-bottom: .25rem; }
+.tip .row { display: flex; align-items: baseline; gap: .375rem; }
+.tip .row .nm { color: var(--ink-2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tip .row .v { font-weight: 600; font-size: 1rem; }
+.tip .row .u { color: var(--muted); font-size: .75rem; }
+.tip .kv { display: flex; gap: .375rem; margin-top: .1875rem; color: var(--muted); font-size: .75rem; }
+.tip .kv .k { flex: 0 0 auto; }
+.tip .kv .val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar { display: flex; align-items: center; gap: .75rem; margin-top: .5rem; padding: 0 .5rem; min-height: 1.75rem; }
+button {
+  font: inherit;
+  font-size: .8125rem;
+  padding: .1875rem .625rem;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--axis);
+  border-radius: 5px;
+  cursor: pointer;
+}
+button:hover { color: var(--ink); }
+button[hidden] { display: none; }
+.hint { color: var(--muted); font-size: .75rem; }
+details { margin-top: 1.5rem; }
+summary { cursor: pointer; color: var(--ink-2); font-size: .8125rem; }
+.scroll { overflow-x: auto; margin-top: .75rem; }
+table { border-collapse: collapse; font-size: .8125rem; white-space: nowrap; }
+th, td { text-align: left; padding: .3125rem .75rem .3125rem 0; border-bottom: 1px solid var(--grid); }
+th { color: var(--muted); font-weight: 500; }
+td.num { text-align: right; padding-right: 1.5rem; }
+td.mono, td.mono a { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+a { color: inherit; }
+td.mono a { color: var(--ink-2); }
+footer { margin-top: 2rem; color: var(--muted); font-size: .75rem; }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>{{.Title}}</h1>
+  <p class="meta">{{.Count}} point{{if ne .Count 1}}s{{end}} · {{.Span}}</p>
+
+  {{if .Multi}}
+  <div class="legend">
+    {{range .Stats}}
+    <span class="item">
+      <span class="{{.Class}}"><span class="key"></span></span>
+      <span class="name">{{.Name}}</span>
+      <span class="n">{{.Latest}}</span>
+      {{if .Unit}}<span class="name">{{.Unit}}</span>{{end}}
+      <span class="d">{{.Delta}}</span>
+    </span>
+    {{end}}
+  </div>
+  {{else}}{{range .Stats}}
+  <div class="hero">
+    <span class="value">{{.Latest}}</span>
+    {{if .Unit}}<span class="unit">{{.Unit}}</span>{{end}}
+    <span class="delta"><span class="n">{{.Delta}}</span> since {{.Since}}</span>
+  </div>
+  {{end}}{{end}}
+
+  <figure>
+    <div id="plot" tabindex="0" role="img" aria-label="{{.Title}} over time, {{.Count}} points. Use the arrow keys to read individual values.">
+      <p class="noscript">This chart needs JavaScript. The data table below has every value.</p>
+    </div>
+    <div class="bar">
+      <button id="reset" hidden>Reset zoom</button>
+      <span class="hint">Drag to zoom · arrow keys to step{{if .LabelTitle}} · click a point to open its link{{end}}</span>
+    </div>
+  </figure>
+
+  <output id="readout" class="sr" aria-live="polite"></output>
+
+  <details>
+    <summary>Data table</summary>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            {{if .Multi}}<th>Series</th>{{end}}
+            <th>Timestamp</th>
+            <th class="num">Value</th>
+            {{if .LabelTitle}}<th>{{.LabelTitle}}</th>{{end}}
+            {{range .MetaCols}}<th>{{.}}</th>{{end}}
+          </tr>
+        </thead>
+        <tbody>
+        {{range .Rows}}
+          <tr>
+            {{if $.Multi}}<td><span class="{{.Class}}"><span class="key"></span></span> {{.Series}}</td>{{end}}
+            <td>{{.Timestamp}}</td>
+            <td class="num">{{.Value}}</td>
+            {{if $.LabelTitle}}<td class="mono">{{if .Href}}<a href="{{.Href}}">{{.Label}}</a>{{else}}{{.Label}}{{end}}</td>{{end}}
+            {{range .Meta}}<td class="mono">{{.}}</td>{{end}}
+          </tr>
+        {{end}}
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <footer>Generated by {{.Generator}}.</footer>
+</main>
+
+<script id="charty-data" type="application/json">{{.Data}}</script>
+<script>
+(() => {
+  "use strict";
+  const cfg = JSON.parse(document.getElementById("charty-data").textContent);
+  const S = cfg.series.filter((s) => s.points.length);
+  const RULES = cfg.rules || [];
+  if (!S.length) return;
+
+  const plot = document.getElementById("plot");
+  const resetBtn = document.getElementById("reset");
+  const readout = document.getElementById("readout");
+
+  const M = { top: 14, right: 60, bottom: 30, left: 56 };
+  const DAY = 86400000;
+  const STEPS = [60e3, 5 * 60e3, 15 * 60e3, 3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3,
+    DAY, 2 * DAY, 7 * DAY, 14 * DAY, 30 * DAY, 91 * DAY, 182 * DAY, 365 * DAY];
+  const DIRECT_LABEL_LIMIT = 4;
+
+  const dayFmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+  const monthFmt = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short" });
+  const clockFmt = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
+  const dayTimeFmt = new Intl.DateTimeFormat(undefined, {
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+  const fullFmt = new Intl.DateTimeFormat(undefined, {
+    year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+
+  // Series may be sampled at different moments, so the crosshair walks the
+  // union of their timestamps and each series contributes only where it has a
+  // real measurement. Nothing is interpolated.
+  const times = [...new Set(S.flatMap((s) => s.points.map((p) => p.t)))].sort((a, b) => a - b);
+  const byTime = S.map((s) => new Map(s.points.map((p) => [p.t, p])));
+  // In index mode a point sits at its place in the chart's history rather than
+  // at its timestamp, so a burst of measurements keeps its width. The position
+  // comes from the union of every series' times, which is what keeps series
+  // measured at different moments lined up.
+  const INDEXED = cfg.xAxis === "index";
+  const pos = new Map(times.map((t, i) => [t, i]));
+  const xOf = (t) => (INDEXED ? pos.get(t) : t);
+
+  let lo = 0, hi = times.length - 1;
+  let sel = -1;
+  let drag = null;
+  let box = { w: 0, h: 0 };
+  let scale = null;
+  let pointerY = 0;
+
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  const tip = document.createElement("div");
+  tip.className = "tip";
+  tip.hidden = true;
+  plot.textContent = "";
+  plot.append(svg, tip);
+
+  const el = (name, attrs) => {
+    const n = document.createElementNS(svgNS, name);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  };
+  const div = (cls, text) => {
+    const d = document.createElement("div");
+    if (cls) d.className = cls;
+    if (text !== undefined) d.textContent = text;
+    return d;
+  };
+
+  // The tooltip is where precision belongs; labels elsewhere stay at two
+  // decimals so the axis, the direct labels and the summary agree.
+  const fmtValue = (v) =>
+    Number.isInteger(v) ? String(v) : v.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+  const fmtLabel = (v) => (Number.isInteger(v) ? String(v) : v.toFixed(2));
+
+  // niceTicks walks 1/2/5 × 10^k so the axis lands on numbers people read.
+  function niceTicks(min, max, target) {
+    const raw = (max - min) / target;
+    if (!(raw > 0)) return { ticks: [min], decimals: 2 };
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    let step = mag * 10;
+    for (const m of [1, 2, 5, 10]) {
+      if (mag * m >= raw) { step = mag * m; break; }
+    }
+    const decimals = Math.max(0, -Math.floor(Math.log10(step)));
+    const ticks = [];
+    for (let t = Math.ceil(min / step) * step; t <= max + step / 1e6; t += step) {
+      ticks.push(Math.round(t / step) * step);
+    }
+    return { ticks, decimals };
+  }
+
+  // timeTicks aligns on local midnight for day-or-larger steps, so a label
+  // never names the day before the tick it sits under.
+  function timeTicks(t0, t1) {
+    const span = t1 - t0;
+    let step = STEPS[STEPS.length - 1];
+    for (const s of STEPS) {
+      if (span / s <= 5) { step = s; break; }
+    }
+    const ticks = [];
+    if (step >= DAY) {
+      const days = Math.round(step / DAY);
+      const d = new Date(t0);
+      d.setHours(0, 0, 0, 0);
+      if (d.getTime() < t0) d.setDate(d.getDate() + 1);
+      for (; d.getTime() <= t1; d.setDate(d.getDate() + days)) ticks.push(d.getTime());
+    } else {
+      for (let t = Math.ceil(t0 / step) * step; t <= t1; t += step) ticks.push(t);
+    }
+    const fmt = step >= 60 * DAY ? monthFmt : step >= DAY ? dayFmt : clockFmt;
+    return { ticks, fmt };
+  }
+
+  // indexTicks labels evenly spaced positions with the date found there: round
+  // numbers of points rather than of time.
+  function indexTicks(lo, hi) {
+    const step = Math.max(1, Math.floor((hi - lo) / 5));
+    const ticks = [];
+    for (let i = lo; i <= hi; i += step) ticks.push(times[i]);
+    const span = ticks[ticks.length - 1] - ticks[0];
+    let fmt = span >= 60 * DAY ? monthFmt : span >= 2 * DAY ? dayFmt : clockFmt;
+    // Ticks are spaced by count, so neighbours can share a date — several
+    // reports from one busy afternoon. A date repeated down the axis reads as
+    // a mistake, so fall back to a layout that tells them apart.
+    const rendered = ticks.map((t) => fmt.format(new Date(t)));
+    if (rendered.some((v, i) => i > 0 && v === rendered[i - 1])) fmt = dayTimeFmt;
+    return { ticks, fmt };
+  }
+
+  const visible = (s) => s.points.filter((p) => p.t >= times[lo] && p.t <= times[hi]);
+
+  function draw() {
+    box = { w: plot.clientWidth, h: plot.clientHeight };
+    if (box.w < 80 || box.h < 80) return;
+    svg.setAttribute("viewBox", `0 0 ${box.w} ${box.h}`);
+    svg.textContent = "";
+
+    const x0 = M.left, x1 = box.w - M.right;
+    const y0 = box.h - M.bottom, y1 = M.top;
+
+    let tMin = xOf(times[lo]), tMax = xOf(times[hi]);
+    if (tMax === tMin) { tMin -= INDEXED ? 0.5 : DAY / 2; tMax += INDEXED ? 0.5 : DAY / 2; }
+
+    let vMin = Infinity, vMax = -Infinity;
+    for (const s of S) {
+      for (const p of visible(s)) {
+        if (p.v < vMin) vMin = p.v;
+        if (p.v > vMax) vMax = p.v;
+      }
+    }
+    // A target the axis does not reach tells the reader nothing about whether
+    // it is being met, so rules stretch the range like data does.
+    for (const r of RULES) {
+      if (r.v < vMin) vMin = r.v;
+      if (r.v > vMax) vMax = r.v;
+    }
+    if (!(vMin <= vMax)) return;
+    // Not anchored at zero: a trend line's interesting range is often a few
+    // percent wide, and a zero baseline would flatten every change worth
+    // seeing. Safe for a line, which encodes change by position.
+    let padV = (vMax - vMin) * 0.25;
+    if (padV === 0) padV = Math.max(Math.abs(vMax) * 0.05, 1);
+    vMin -= padV; vMax += padV;
+    if (cfg.yMin !== undefined) vMin = cfg.yMin;
+    if (cfg.yMax !== undefined) vMax = cfg.yMax;
+    if (vMin >= vMax) vMax = vMin + 1;
+
+    const sx = (t) => x0 + ((xOf(t) - tMin) / (tMax - tMin)) * (x1 - x0);
+    const sy = (v) => y0 - ((v - vMin) / (vMax - vMin)) * (y0 - y1);
+    scale = { sx, sy, x0, x1, y0, y1 };
+
+    const y = niceTicks(vMin, vMax, 4);
+    for (const t of y.ticks) {
+      if (t < vMin || t > vMax) continue;
+      const py = Math.round(sy(t)) + 0.5;
+      svg.append(el("line", { x1: x0, x2: x1, y1: py, y2: py, stroke: "var(--grid)", "stroke-width": 1 }));
+      const lbl = el("text", { x: x0 - 8, y: py + 4, "text-anchor": "end", fill: "var(--muted)", "font-size": 11 });
+      lbl.textContent = t.toFixed(y.decimals);
+      svg.append(lbl);
+    }
+    svg.append(el("line", { x1: x0, x2: x1, y1: y0 + 0.5, y2: y0 + 0.5, stroke: "var(--axis)", "stroke-width": 1 }));
+
+    const x = INDEXED ? indexTicks(lo, hi) : timeTicks(tMin, tMax);
+    for (const t of x.ticks) {
+      const px = Math.round(sx(t)) + 0.5;
+      svg.append(el("line", { x1: px, x2: px, y1: y0, y2: y0 + 4, stroke: "var(--axis)", "stroke-width": 1 }));
+      const lbl = el("text", { x: px, y: y0 + 18, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 });
+      lbl.textContent = x.fmt.format(new Date(t));
+      svg.append(lbl);
+    }
+
+    // Rules go under the data: they are chrome, not a series.
+    for (const r of RULES) {
+      const py = Math.round(sy(r.v)) + 0.5;
+      svg.append(el("line", {
+        x1: x0, x2: x1, y1: py, y2: py,
+        stroke: "var(--muted)", "stroke-width": 1, "stroke-dasharray": "4 3",
+      }));
+      if (r.label) {
+        const lbl = el("text", { x: x0 + 4, y: py - 5, fill: "var(--muted)", "font-size": 10 });
+        lbl.textContent = r.label;
+        svg.append(lbl);
+      }
+    }
+
+    S.forEach((s, i) => {
+      const pts = visible(s);
+      if (!pts.length) return;
+      const g = el("g", { class: `s${i}` });
+      if (pts.length > 1) {
+        // A gap in the measurements is a gap in the line: starting a fresh
+        // subpath says "not measured" where a straight run would claim the
+        // value held steady.
+        const gap = s.gap || 0;
+        let prev = null;
+        const d = pts.map((p) => {
+          const jump = prev === null || (gap > 0 && p.t - prev > gap);
+          prev = p.t;
+          return `${jump ? "M" : "L"}${sx(p.t).toFixed(1)} ${sy(p.v).toFixed(1)}`;
+        }).join("");
+        g.append(el("path", {
+          d, fill: "none", stroke: "currentColor", "stroke-width": 2,
+          "stroke-linejoin": "round", "stroke-linecap": "round",
+        }));
+      }
+      // Individual dots stop being readable once they touch; past that the
+      // line carries the shape on its own.
+      if (pts.length <= 60) {
+        for (const p of pts) {
+          g.append(el("circle", { cx: sx(p.t).toFixed(1), cy: sy(p.v).toFixed(1), r: 3, fill: "currentColor" }));
+        }
+      }
+      const last = pts[pts.length - 1];
+      g.append(el("circle", { cx: sx(last.t).toFixed(1), cy: sy(last.v).toFixed(1), r: 3.5, fill: "currentColor" }));
+      if (S.length <= DIRECT_LABEL_LIMIT) {
+        const dl = el("text", { x: sx(last.t) + 8, y: sy(last.v) + 4, fill: "var(--ink)", "font-size": 11 });
+        dl.textContent = fmtLabel(last.v);
+        g.append(dl);
+      }
+      svg.append(g);
+    });
+
+    if (drag) {
+      const a = Math.min(drag.x0, drag.x1), b = Math.max(drag.x0, drag.x1);
+      svg.append(el("rect", {
+        x: a, y: y1, width: Math.max(1, b - a), height: y0 - y1,
+        fill: "var(--axis)", "fill-opacity": 0.18, stroke: "var(--axis)", "stroke-width": 1,
+      }));
+    }
+
+    if (sel >= lo && sel <= hi && !drag) drawCursor();
+  }
+
+  // hits returns the series that actually measured something at the selected
+  // time, paired with their index so they keep their colour.
+  function hits() {
+    const t = times[sel];
+    const out = [];
+    S.forEach((s, i) => {
+      const p = byTime[i].get(t);
+      if (p) out.push({ i, s, p });
+    });
+    return out;
+  }
+
+  function drawCursor() {
+    const t = times[sel];
+    const px = scale.sx(t);
+    svg.append(el("line", {
+      x1: px, x2: px, y1: scale.y1, y2: scale.y0, stroke: "var(--axis)", "stroke-width": 1,
+    }));
+    const found = hits();
+    for (const h of found) {
+      const py = scale.sy(h.p.v);
+      const g = el("g", { class: `s${h.i}` });
+      // A surface ring lifts the marked point clear of the line it sits on.
+      g.append(el("circle", { cx: px, cy: py, r: 5.5, fill: "var(--surface)" }));
+      g.append(el("circle", { cx: px, cy: py, r: 4, fill: "currentColor" }));
+      svg.append(g);
+    }
+    showTip(found, px);
+  }
+
+  // Names, labels and metadata come from the caller's data, so they are always
+  // inserted as text and never parsed as markup.
+  function showTip(found, px) {
+    if (!found.length) { tip.hidden = true; return; }
+    tip.textContent = "";
+    tip.append(div("when", fullFmt.format(new Date(times[sel]))));
+
+    for (const h of found) {
+      const row = div("row");
+      const key = document.createElement("span");
+      key.className = `s${h.i}`;
+      const stroke = document.createElement("span");
+      stroke.className = "key";
+      key.append(stroke);
+      const v = document.createElement("span");
+      v.className = "v";
+      v.textContent = fmtValue(h.p.v);
+      row.append(key);
+      if (S.length > 1) row.append(div("nm", h.s.name));
+      row.append(v);
+      if (h.s.unit) {
+        const u = document.createElement("span");
+        u.className = "u";
+        u.textContent = h.s.unit;
+        row.append(u);
+      }
+      tip.append(row);
+    }
+
+    // Per-point detail would crowd the tooltip once several series answer at
+    // the same instant; there it belongs to the table.
+    if (found.length === 1) {
+      const p = found[0].p;
+      if (p.label) tip.append(kv("", p.label));
+      for (const [k, val] of p.meta || []) tip.append(kv(k, val));
+    }
+
+    tip.hidden = false;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    let left = px + 14;
+    if (left + w > box.w - 4) left = px - w - 14;
+    const anchor = scale.sy(found[0].p.v);
+    const top = Math.max(2, Math.min(anchor - h / 2, box.h - h - 2));
+    tip.style.left = `${Math.max(2, left)}px`;
+    tip.style.top = `${top}px`;
+
+    const spoken = found.map((h) => `${h.s.name} ${fmtValue(h.p.v)}${h.s.unit ? " " + h.s.unit : ""}`).join(", ");
+    readout.textContent = `${spoken} at ${fullFmt.format(new Date(times[sel]))}`;
+  }
+
+  function kv(k, val) {
+    const row = div("kv");
+    if (k) row.append(div("k", k));
+    row.append(div("val", val));
+    return row;
+  }
+
+  function hideCursor() {
+    sel = -1;
+    tip.hidden = true;
+    draw();
+  }
+
+  function nearest(px) {
+    let best = lo, bestD = Infinity;
+    for (let i = lo; i <= hi; i++) {
+      const d = Math.abs(scale.sx(times[i]) - px);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return best;
+  }
+
+  // With several series stacked at one instant, the pointer's height picks
+  // which one a click means.
+  function pickHref() {
+    const found = hits();
+    if (!found.length) return "";
+    let best = found[0], bestD = Infinity;
+    for (const h of found) {
+      const d = Math.abs(scale.sy(h.p.v) - pointerY);
+      if (d < bestD) { bestD = d; best = h; }
+    }
+    return best.p.href || found.find((h) => h.p.href)?.p.href || "";
+  }
+
+  function openSelected() {
+    const href = pickHref();
+    if (href) window.open(href, "_blank", "noopener");
+  }
+
+  const localPos = (ev) => {
+    const r = plot.getBoundingClientRect();
+    return { x: ev.clientX - r.left, y: ev.clientY - r.top };
+  };
+
+  plot.addEventListener("pointermove", (ev) => {
+    if (!scale) return;
+    const { x, y } = localPos(ev);
+    pointerY = y;
+    if (drag) { drag.x1 = x; draw(); return; }
+    const i = nearest(x);
+    if (i !== sel || tip.hidden) { sel = i; draw(); }
+  });
+
+  plot.addEventListener("pointerleave", () => { if (!drag) hideCursor(); });
+
+  plot.addEventListener("pointerdown", (ev) => {
+    if (ev.button !== 0 || !scale) return;
+    drag = { x0: localPos(ev).x, x1: localPos(ev).x };
+    plot.setPointerCapture(ev.pointerId);
+  });
+
+  plot.addEventListener("pointerup", (ev) => {
+    if (!drag) return;
+    const { x0, x1 } = drag;
+    drag = null;
+    const { x, y } = localPos(ev);
+    pointerY = y;
+    if (Math.abs(x1 - x0) < 8) {          // a click, not a range
+      sel = nearest(x);
+      draw();
+      openSelected();
+      return;
+    }
+    const a = nearest(Math.min(x0, x1)), b = nearest(Math.max(x0, x1));
+    if (b - a >= 1) { lo = a; hi = b; resetBtn.hidden = false; }
+    sel = -1;
+    tip.hidden = true;
+    draw();
+  });
+
+  plot.addEventListener("dblclick", resetZoom);
+  resetBtn.addEventListener("click", () => { resetZoom(); plot.focus(); });
+
+  function resetZoom() {
+    lo = 0; hi = times.length - 1;
+    sel = -1;
+    drag = null;
+    tip.hidden = true;
+    resetBtn.hidden = true;
+    draw();
+  }
+
+  // Keyboard reaches every value the pointer can, which is the whole point of
+  // the tooltip not being the only way to read a number.
+  plot.addEventListener("keydown", (ev) => {
+    const step = ev.shiftKey ? 10 : 1;
+    let next = sel < 0 ? hi : sel;
+    switch (ev.key) {
+      case "ArrowLeft": next = Math.max(lo, next - step); break;
+      case "ArrowRight": next = Math.min(hi, next + step); break;
+      case "Home": next = lo; break;
+      case "End": next = hi; break;
+      case "Escape":
+        if (lo !== 0 || hi !== times.length - 1) resetZoom(); else hideCursor();
+        return;
+      case "Enter":
+      case " ":
+        if (sel >= 0) { openSelected(); ev.preventDefault(); }
+        return;
+      default: return;
+    }
+    ev.preventDefault();
+    sel = next;
+    if (scale) pointerY = scale.sy(hits()[0]?.p.v ?? 0);
+    draw();
+  });
+
+  plot.addEventListener("blur", () => { if (!drag) hideCursor(); });
+
+  new ResizeObserver(() => draw()).observe(plot);
+  draw();
+})();
+</script>
+</body>
+</html>
