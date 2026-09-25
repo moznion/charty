@@ -7,7 +7,7 @@ LDFLAGS := -X main.version=$(VERSION)
 
 # Pinned so a local run and a CI run lint against the same rules. Override
 # GOLANGCI_LINT with an absolute path to use an already-installed binary.
-GOLANGCI_LINT_VERSION ?= v2.12.2
+GOLANGCI_LINT_VERSION ?= v2.14.0
 GOLANGCI_LINT ?= $(BIN)/golangci-lint
 
 SNAPSHOT := $(CURDIR)/.vendor-snapshot
